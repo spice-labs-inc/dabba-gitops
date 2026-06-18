@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+---
+# OpenObserve — self-hosted, single-binary logs/metrics/traces backend + UI.
+# Tier-0 demo: ephemeral storage (emptyDir); admin password via OpenBao -> ExternalSecret.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openobserve
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openobserve
+  template:
+    metadata:
+      labels:
+        app: openobserve
+    spec:
+      securityContext:
+        fsGroup: 2000
+      containers:
+        - name: openobserve
+          image: public.ecr.aws/zinclabs/openobserve:v0.91.0-rc3
+          env:
+            - name: ZO_ROOT_USER_EMAIL
+              value: "admin@dabba.local"
+            - name: ZO_ROOT_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openobserve-admin
+                  key: password
+            - name: ZO_DATA_DIR
+              value: "/data"
+          ports:
+            - containerPort: 5080
+              name: http
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openobserve
+  namespace: observability
+spec:
+  selector:
+    app: openobserve
+  ports:
+    - name: http
+      port: 5080
+      targetPort: 5080

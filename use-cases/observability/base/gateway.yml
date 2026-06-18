@@ -1,0 +1,38 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: openobserve
+  namespace: observability
+  annotations:
+    cert-manager.io/cluster-issuer: "${cluster_issuer}"
+spec:
+  gatewayClassName: eg
+  listeners:
+    - allowedRoutes:
+        namespaces:
+          from: Same
+      name: https
+      port: 443
+      protocol: HTTPS
+      hostname: o2.${domain}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: openobserve-tls-ingress
+            namespace: observability
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: openobserve
+  namespace: observability
+spec:
+  parentRefs:
+    - name: openobserve
+  hostnames:
+    - o2.${domain}
+  rules:
+    - backendRefs:
+        - name: openobserve
+          port: 5080

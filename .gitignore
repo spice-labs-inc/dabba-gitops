@@ -1,0 +1,3 @@
+# re-include docs in case a global excludes file ignores markdown
+!*.md
+.DS_Store

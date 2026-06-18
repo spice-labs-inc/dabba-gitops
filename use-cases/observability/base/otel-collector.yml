@@ -1,0 +1,101 @@
+---
+# OpenTelemetry Collector — receives OTLP traces (and metrics) from apps and
+# forwards them to OpenObserve, which is OTLP-native. This is the "Vector for
+# logs/metrics, OTEL for traces" split: apps send OTLP to otel-collector:4317.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector
+  namespace: observability
+  annotations:
+    # Skip Flux var substitution: ${env:OPENOBSERVE_PASSWORD} is the collector's own
+    # runtime env interpolation, not a cluster-var.
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch: {}
+    extensions:
+      # Basic auth to OpenObserve; password read from the env (sourced from the
+      # openobserve-admin Secret). $$ so Flux leaves ${env:...} for the collector.
+      basicauth/openobserve:
+        client_auth:
+          username: admin@dabba.local
+          password: "${env:OPENOBSERVE_PASSWORD}"
+    exporters:
+      otlphttp/openobserve:
+        endpoint: http://openobserve.observability.svc.cluster.local:5080/api/default
+        auth:
+          authenticator: basicauth/openobserve
+    service:
+      extensions: [basicauth/openobserve]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/openobserve]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/openobserve]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.110.0
+          args: ["--config=/etc/otel/config.yaml"]
+          env:
+            - name: OPENOBSERVE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openobserve-admin
+                  key: password
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+      volumes:
+        - name: config
+          configMap:
+            name: otel-collector
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: observability
+spec:
+  selector:
+    app: otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
