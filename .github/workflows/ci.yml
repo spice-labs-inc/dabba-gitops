@@ -58,18 +58,9 @@ jobs:
           directory: rendered
           config: .kube-linter.yaml
 
-  # Kubernetes misconfiguration scanning.
-  trivy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.35.0
-        with:
-          scan-type: config
-          scan-ref: .
-          exit-code: "1"
-          severity: CRITICAL,HIGH
-          ignore-unfixed: "true"
+  # kube-linter (above) is the dedicated Kubernetes manifest security gate. trivy
+  # config is not duplicated here — it overlaps kube-linter for k8s and is kept in
+  # dabba-modules for IaC scanning, where it covers ground kube-linter doesn't.
 
   gitleaks:
     runs-on: ubuntu-latest
