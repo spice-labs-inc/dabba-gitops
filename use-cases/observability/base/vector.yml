@@ -70,6 +70,10 @@ kind: DaemonSet
 metadata:
   name: vector
   namespace: observability
+  annotations:
+    # A node log collector must read root-owned host /var/log; every other
+    # privilege is dropped (no caps, no privilege escalation, seccomp default).
+    ignore-check.kube-linter.io/run-as-non-root: "log collector needs root to read host /var/log"
 spec:
   selector:
     matchLabels:
