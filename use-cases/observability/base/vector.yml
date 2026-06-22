@@ -94,6 +94,21 @@ spec:
                 secretKeyRef:
                   name: openobserve-admin
                   key: password
+          # Runs as root: a node log collector needs to read host /var/log, which
+          # is typically root-only. Everything else is locked down.
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
             - name: config
               mountPath: /etc/vector

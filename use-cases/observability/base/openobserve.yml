@@ -39,6 +39,21 @@ spec:
           ports:
             - containerPort: 5080
               name: http
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 2000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           volumeMounts:
             - name: data
               mountPath: /data
@@ -48,6 +63,12 @@ spec:
               port: 5080
             initialDelaySeconds: 10
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5080
+            initialDelaySeconds: 30
+            periodSeconds: 15
       volumes:
         - name: data
           emptyDir: {}

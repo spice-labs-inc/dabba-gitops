@@ -1,0 +1,15 @@
+# kube-linter policy for the dabba-authored workloads. Scoped to security
+# essentials; HA/replica checks are intentionally omitted (tier-0 is single-node).
+# run-as-non-root is omitted because the Vector node-log collector needs root to
+# read host /var/log; every other privilege is dropped.
+checks:
+  addAllBuiltIn: false
+  include:
+    - privileged-container
+    - privilege-escalation-container
+    - drop-net-raw-capability
+    - unset-cpu-requirements
+    - unset-memory-requirements
+    - host-network
+    - host-ipc
+    - host-pid
