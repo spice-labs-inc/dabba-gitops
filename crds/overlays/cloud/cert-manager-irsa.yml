@@ -1,0 +1,23 @@
+# On the cloud overlay cert-manager solves ACME DNS-01 in Route53, so its service
+# account assumes the cert-manager IRSA role. fsGroup lets the pod read the
+# projected IRSA token.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+spec:
+  values:
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: "${cert_manager_role_arn}"
+    securityContext:
+      fsGroup: 1001
+    # EKS Fargate reserves port 10250 for its kubelet; the webhook's default
+    # secure port collides with it, so connections hit the kubelet (wrong cert).
+    webhook:
+      securePort: 10260
+    # The startupapicheck post-install hook cold-starts a Job on Fargate and
+    # times out the helm install; cert-manager is functional without it.
+    startupapicheck:
+      enabled: false

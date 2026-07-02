@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/cert-manager
+  - ../../base/envoy-gateway
+  - ../../base/external-secrets-operator
+
+patches:
+  - path: cert-manager-irsa.yml
+    target:
+      kind: HelmRelease
+      name: cert-manager
+  - path: external-secrets-port.yml
+    target:
+      kind: HelmRelease
+      name: external-secrets

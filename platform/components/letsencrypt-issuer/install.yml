@@ -1,0 +1,19 @@
+---
+# Real TLS: a Let's Encrypt ClusterIssuer solving ACME DNS-01 in the delegated
+# Route53 zone. cert-manager assumes the cert-manager IRSA role (annotated on its
+# service account by the crds cloud overlay) to write the _acme-challenge records.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: "${acme_email}"
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      - dns01:
+          route53:
+            region: "${region}"
+            hostedZoneID: "${route53_zone_id}"
