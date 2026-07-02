@@ -1,0 +1,55 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-dns
+  labels:
+    app.kubernetes.io/part-of: dabba
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 24h
+  url: https://kubernetes-sigs.github.io/external-dns
+---
+# Publishes gateway hostnames as records in the delegated Route53 zone. Scoped to
+# the dabba subdomain and that zone only; assumes its IRSA role via the SA.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: external-dns
+      version: "1.15.0"
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: external-dns
+      interval: 12h
+  values:
+    provider:
+      name: aws
+    serviceAccount:
+      create: true
+      name: external-dns
+      annotations:
+        eks.amazonaws.com/role-arn: "${external_dns_role_arn}"
+    domainFilters:
+      - "${domain}"
+    # dabba's domain is often a subdomain of the delegated hosted zone (e.g.
+    # demo.eks.spice-labs.dev inside the eks.spice-labs.dev zone). Without this,
+    # external-dns only matches a zone whose name equals the domain filter and
+    # manages nothing; this lets the subdomain filter match the parent zone.
+    extraArgs:
+      - --aws-zone-match-parent
+    policy: sync
+    txtOwnerId: "dabba-${cluster}"
+    sources:
+      - gateway-httproute

@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../components/letsencrypt-issuer
+  - ../../components/openbao-dev
+  - ../../components/aws-lb-controller
+  - ../../components/external-dns
+
+patches:
+  - path: envoy-loadbalancer.yml
+    target:
+      kind: EnvoyProxy
+      name: proxy-config
