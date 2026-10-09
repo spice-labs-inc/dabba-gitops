@@ -29,9 +29,10 @@ a `cluster-vars` ConfigMap; everything else is reconciled from this repo.
   ClusterSecretStore, random-key ClusterGenerator
 - `platform/components/` — opt-in pieces overlays compose:
   - `selfsigned-issuer` — `dabba-ca` ClusterIssuer for local TLS
-  - `openbao-dev` — in-cluster dev-mode OpenBao + `openbao` store (local only)
-- `platform/overlays/local` — base + both components + NodePort envoy (pairs with the kind
-  module's host port mapping)
+  - `openbao-dev`: in-cluster dev-mode OpenBao + `openbao` store (demos only, see below)
+  - `openbao-dev-ui`: publishes that OpenBao at `bao.${domain}` (local overlay only)
+- `platform/overlays/local`: base + those three components + NodePort envoy (pairs with the
+  kind module's host port mapping)
 - `use-cases/demo` — podinfo behind the gateway, its banner delivered from OpenBao via ExternalSecret
 - `use-cases/observability` — Vector + OpenObserve + an OTel collector (opt-in)
 
@@ -47,8 +48,27 @@ Read from the `cluster-vars` ConfigMap via `postBuild.substituteFrom`:
 
 `${environment}` and `${cluster_name}` are also stamped into `cluster-vars` for overlay use.
 
-Cloud overlays (ACME issuers, external-dns, external OpenBao, LB gateways) are added as sibling
-components/overlays under a new `clusters/<name>/` — the base stays cloud-free.
+Cloud overlays (ACME issuers, external-dns, LB gateways) are added as sibling
+components/overlays under a new `clusters/<name>/`; the base stays cloud-free.
+
+## Secrets: the bundled OpenBao is for demos only
+
+`openbao-dev` runs OpenBao in dev mode: in-memory storage, no seal, and a root token kept in
+plaintext in the `cluster-vars` ConfigMap. It exists so the demo and observability use-cases
+work out of the box. The cloud overlay keeps it inside the cluster and does not route it on the
+public gateway; only the local overlay publishes it at `bao.${domain}`, for workstation clusters.
+If your cluster is reachable from the internet, drop `openbao-dev-ui` from the overlay.
+
+For a real deployment, replace `openbao-dev` with one of:
+
+- a sealed OpenBao or Vault with persistent storage and a proper unseal (auto-unseal through a
+  cloud KMS, or Shamir keys held by people), with apps authenticating through Kubernetes auth
+  instead of a root token
+- your cloud's secret manager (AWS Secrets Manager, GCP Secret Manager, Azure Key Vault)
+  through an External Secrets `ClusterSecretStore`
+
+Either way, keep the store named `openbao` (or point the use-cases' `secretStoreRef` at your
+store) so the ExternalSecrets keep resolving.
 
 ## Contributing & license
 
