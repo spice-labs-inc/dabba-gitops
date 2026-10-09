@@ -7,6 +7,9 @@ against it unchanged. The root token is generated per-environment by the dabba C
 substituted in via `${openbao_root_token}` from `cluster-vars` (retrieve it with
 `dabba secret get local/openbao-root`).
 
-**Local clusters only.** Dev mode persists nothing and holds its root token in a plaintext
-ConfigMap — fine for a throwaway local cluster, not for anything real. Cloud overlays use an
-external OpenBao/Vault with a proper seal instead.
+**Demos only.** Dev mode persists nothing, has no seal, and its root token sits in plaintext in
+the `cluster-vars` ConfigMap. It is reachable only inside the cluster (External Secrets, and
+`dabba secret` via `kubectl exec`). The separate `openbao-dev-ui` component publishes it at
+`bao.${domain}` on the gateway. Only the local overlay includes that, for workstation clusters;
+remove it there if your cluster is reachable from the internet. For anything real, see the repo
+README.

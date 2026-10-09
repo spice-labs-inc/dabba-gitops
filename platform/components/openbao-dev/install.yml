@@ -47,7 +47,7 @@ spec:
           memory: 256Mi
 ---
 # Token auth against the dev-mode OpenBao. The token is the per-env random root
-# token dabba generated (cluster-vars); this component is local-cluster-only.
+# token dabba generated (cluster-vars); dev mode, for demos only.
 apiVersion: v1
 kind: Secret
 metadata:

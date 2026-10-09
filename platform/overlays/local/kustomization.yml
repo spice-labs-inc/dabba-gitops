@@ -7,6 +7,7 @@ resources:
 components:
   - ../../components/selfsigned-issuer
   - ../../components/openbao-dev
+  - ../../components/openbao-dev-ui
 
 patches:
   - path: envoy-nodeport.yml

@@ -15,6 +15,6 @@ Security fixes target the latest released tag.
 This repository is the platform's gitops content (Flux manifests). It contains **no secrets** —
 credentials are generated per-environment by the [`dabba`](https://github.com/spice-labs-inc/dabba)
 CLI and delivered at runtime via OpenBao + External Secrets; manifests reference them by
-`secretKeyRef`, never inline. The `openbao-dev` component is **local-only** dev-mode OpenBao
-(documented in its README). The broader platform security model is in the
+`secretKeyRef`, never inline. The `openbao-dev` component is dev-mode OpenBao for **demos only**
+(see the README). The broader platform security model is in the
 [dabba SECURITY policy](https://github.com/spice-labs-inc/dabba/blob/main/SECURITY.md).
